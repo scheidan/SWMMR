@@ -212,8 +212,8 @@ openSWMMOutput <- function(SWMMoutfile, timezone="") {
 
   ## add file handler
   f.props$outFileHandle <- f
-  f.props$fileName <- SWMMoutfile
-  class(f.props) <- normalizePath(SWMMoutfile)
+  f.props$fileName <- normalizePath(SWMMoutfile)
+  class(f.props) <- "SWMMfile"
   return(f.props)
 }
 
@@ -236,24 +236,46 @@ closeSWMMOutput <- function(SWMMfile){
 ##' @author Andreas Scheidegger
 ##' @export
 print.SWMMfile <- function(SWMMfile){
-  ll <- list()
 
-  ll$subcatchmentNames <- unlist(SWMMfile$subcNames)
-  ll$linkNames <- unlist(SWMMfile$linkNames)
-  ll$nodes <- data.frame(name=unlist(SWMMfile$nodeNames),
-                         type=unlist(SWMMfile$nodeType)) 
+  cat(paste0("Connection to SWMM output file:\n   ", SWMMfile$fileName, "\n\n"))
 
-  if(SWMMfile$numPoll > 0) {
-    ll$pollutants <- data.frame(name=unlist(SWMMfile$pollNames),
-                                unit=unlist(SWMMfile$pollUnits))
+  cat("Simulation from", as.character(min(SWMMfile$SWMMTimes)), "to",
+      as.character(max(SWMMfile$SWMMTimes)), "\n")
+
+  dt <- diff(SWMMfile$SWMMTimes[1:2])
+  cat(" in", length(SWMMfile$SWMMTimes), "time steps à", dt, attr(dt, "unit"), "\n\n")
+
+  cat(length(SWMMfile$subcNames), "subcatchments")
+  if(length(SWMMfile$subcNames)>0){
+    cat(":\n-  ")
+    cat(paste(unlist(SWMMfile$subcNames), collapse="\n-  "))
   }
 
-  ll$deltaTime <- diff(SWMMfile$SWMMTimes[1:2])
-  ll$minTime <- min(SWMMfile$SWMMTimes)
-  ll$maxTime <- max(SWMMfile$SWMMTimes)
+  cat("\n\n")
+  cat(length(SWMMfile$nodeNames), "nodes")
+  if(length(SWMMfile$nodeNames)>0) {
+    cat(":\n-  ")
+    cat(paste(paste0(unlist(SWMMfile$nodeNames),
+                     " (",unlist(SWMMfile$nodeType), ")"), collapse="\n-  "))
+  }
 
-  print(SWMMTimes$fileName)
-  print(ll)
+  cat("\n\n")
+  cat(length(SWMMfile$linkNames), "links")
+  if(length(SWMMfile$linkNames)>0) {
+    cat(":\n-  ")
+    cat(paste(unlist(SWMMfile$linkNames), collapse="\n-  "))
+  }
+
+  cat("\n\n")
+  cat(SWMMfile$numPoll, "pollutants")
+  if(SWMMfile$numPoll>0){
+    cat(":\n-  ")
+    cat(paste(paste0(unlist(SWMMfile$pollNames),
+                     " [",unlist(SWMMfile$pollUnits), "]"), collapse="\n-  "))
+  }
+
+  cat("\n\n")
+
 }
 
 

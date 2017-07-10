@@ -21,7 +21,7 @@ readSingleResult(SWMMfile, iType, iIndex, vIndex, period)
 a scalar
 }
 \description{
-Function used internally only. Reads a single result form a SWMM outputfile.
+This function used internally only. Reads a single result from a SWMM outputfile.
 }
 \details{
 \code{iType} should be 0 for Subcatchments, 1 for nodes, 2 for links, or 3 for system variables.
