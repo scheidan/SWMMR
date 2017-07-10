@@ -4,6 +4,7 @@
 
 ##' @import stats
 ##' @import xts
+##' @import utils
 NULL
 
 ##' SWMMR - R interface to the Storm Water Management Model (SWMM)
