@@ -36,7 +36,12 @@ openSWMMOutput <- function(SWMMoutfile, timezone="") {
   f.props$numNode <- header[5]
   f.props$numLink <- header[6]
   f.props$numPoll <- header[7]
-  f.props$flowUnitCode <- header[3]
+ 
+  ## Units: 0 = CFS, 1 = GPM, 2 = MGD, 3 = CMS, 4 = LPS, and 5 = LPD
+  flowUnits <- c("cubic feet per second", "US gallons per minute",
+                 "million US gallons per day", "cubic meters per second",
+                 "liters per second", "liters per day")
+  f.props$flowUnit <- flowUnits[header[3]+1]
   
   seek(f,-6*4,"end")
   f.props$position.objectID <- readBin(f, integer(), n = 1, size = 4)
@@ -243,10 +248,12 @@ print.SWMMfile <- function(x, ...){
 
   cat("Simulation from", as.character(min(x$SWMMTimes)), "to",
       as.character(max(x$SWMMTimes)), "\n")
-
   dt <- diff(x$SWMMTimes[1:2])
-  cat(" in", length(x$SWMMTimes), "time steps \u00E0", dt, attr(dt, "unit"), "\n\n")
+  cat(" in ", length(x$SWMMTimes), " time steps \u00E0 ", dt, attr(dt, "unit"),
+      ".\n\n", sep="")
 
+  cat("Flow unit is ", x$flowUnit, ".\n\n", sep="")
+  
   cat(length(x$subcNames), "subcatchments")
   if(length(x$subcNames)>0){
     cat(":\n-  ")
