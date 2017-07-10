@@ -218,9 +218,9 @@ openSWMMOutput <- function(SWMMoutfile, timezone="") {
 }
 
 
-
+##' Closes file connection of a \code{SWMMfile} object.
 ##' @title Closes a SWMM file handler
-##' @param SWMMfile a SWMM file handler
+##' @param SWMMfile a \code{SWMMfile} object
 ##' @return nothing
 ##' @author Andreas Scheidegger
 ##' @export
@@ -229,49 +229,51 @@ closeSWMMOutput <- function(SWMMfile){
 } 
 
 
+## ' Print function for \code{SWMMfile} objects.
+## ' @title Print main properties of a SWMM output file
+## ' @param SWMMfile a \code{SWMMfile} object
+## ' @return nothing
 
-##' @title Print main properties of a SWMM output file
-##' @param SWMMfile a \code{SWMMfile} object
-##' @return nothing
+
 ##' @author Andreas Scheidegger
 ##' @export
-print.SWMMfile <- function(SWMMfile){
+print.SWMMfile <- function(x, ...){
 
-  cat(paste0("Connection to SWMM output file:\n   ", SWMMfile$fileName, "\n\n"))
+  cat(paste0("Connection to SWMM output file:\n   ", x$fileName, "\n\n"))
 
-  cat("Simulation from", as.character(min(SWMMfile$SWMMTimes)), "to",
-      as.character(max(SWMMfile$SWMMTimes)), "\n")
+  cat("Simulation from", as.character(min(x$SWMMTimes)), "to",
+      as.character(max(x$SWMMTimes)), "\n")
 
-  dt <- diff(SWMMfile$SWMMTimes[1:2])
-  cat(" in", length(SWMMfile$SWMMTimes), "time steps à", dt, attr(dt, "unit"), "\n\n")
+  dt <- diff(x$SWMMTimes[1:2])
+  cat(" in", length(x$SWMMTimes), "time steps \u00E0", dt, attr(dt, "unit"), "\n\n")
 
-  cat(length(SWMMfile$subcNames), "subcatchments")
-  if(length(SWMMfile$subcNames)>0){
+  cat(length(x$subcNames), "subcatchments")
+  if(length(x$subcNames)>0){
     cat(":\n-  ")
-    cat(paste(unlist(SWMMfile$subcNames), collapse="\n-  "))
+    cat(paste(unlist(x$subcNames), collapse="\n-  "))
   }
 
   cat("\n\n")
-  cat(length(SWMMfile$nodeNames), "nodes")
-  if(length(SWMMfile$nodeNames)>0) {
+  cat(length(x$nodeNames), "nodes")
+  if(length(x$nodeNames)>0) {
     cat(":\n-  ")
-    cat(paste(paste0(unlist(SWMMfile$nodeNames),
-                     " (",unlist(SWMMfile$nodeType), ")"), collapse="\n-  "))
+    cat(paste(paste0(unlist(x$nodeNames),
+                     " (",unlist(x$nodeType), ")"), collapse="\n-  "))
   }
 
   cat("\n\n")
-  cat(length(SWMMfile$linkNames), "links")
-  if(length(SWMMfile$linkNames)>0) {
+  cat(length(x$linkNames), "links")
+  if(length(x$linkNames)>0) {
     cat(":\n-  ")
-    cat(paste(unlist(SWMMfile$linkNames), collapse="\n-  "))
+    cat(paste(unlist(x$linkNames), collapse="\n-  "))
   }
 
   cat("\n\n")
-  cat(SWMMfile$numPoll, "pollutants")
-  if(SWMMfile$numPoll>0){
+  cat(x$numPoll, "pollutants")
+  if(x$numPoll>0){
     cat(":\n-  ")
-    cat(paste(paste0(unlist(SWMMfile$pollNames),
-                     " [",unlist(SWMMfile$pollUnits), "]"), collapse="\n-  "))
+    cat(paste(paste0(unlist(x$pollNames),
+                     " [",unlist(x$pollUnits), "]"), collapse="\n-  "))
   }
 
   cat("\n\n")

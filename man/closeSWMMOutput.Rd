@@ -7,10 +7,13 @@
 closeSWMMOutput(SWMMfile)
 }
 \arguments{
-\item{SWMMfile}{a SWMM file handler}
+\item{SWMMfile}{a \code{SWMMfile} object}
 }
 \value{
 nothing
+}
+\description{
+Closes file connection of a \code{SWMMfile} object.
 }
 \author{
 Andreas Scheidegger
