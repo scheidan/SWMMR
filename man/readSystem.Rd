@@ -26,13 +26,15 @@ The following variables are available for the system:
 \item{"evaporation + infiltration loss rate"}{}
 \item{"runoff flow"}{}
 \item{"dry weather inflow"}{}
+\item{"groundwater inflow"}{}
 \item{"RDII inflow"}{}
 \item{"direct inflow"}{user supplied}
 \item{"total lateral inflow"}{sum of runoff flow plus all inflows}
 \item{"flow lost to flooding"}{}
 \item{"flow leaving through outfalls"}{}
 \item{"volume of stored water"}{}
-\item{"evaporation rate"}{}
+\item{"actual evaporation rate"}{}
+\item{"potential evaporation rate"}
 }
 }
 \author{

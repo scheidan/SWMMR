@@ -28,15 +28,15 @@ openSWMMOutput <- function(SWMMoutfile, timezone="") {
   }
 
   f.props$SWMMversion <- header[2]
-  if(f.props$SWMMversion < 51000){
-    stop("At least SWMM V5.1 is required!")
+  if(f.props$SWMMversion != 51000){
+    stop("SWMM V5.1 is required!")
   }
   
   f.props$numSubc <- header[4]
   f.props$numNode <- header[5]
   f.props$numLink <- header[6]
   f.props$numPoll <- header[7]
-  f.props$unitCode <- header[3]
+  f.props$flowUnitCode <- header[3]
   
   seek(f,-6*4,"end")
   f.props$position.objectID <- readBin(f, integer(), n = 1, size = 4)
@@ -182,8 +182,8 @@ openSWMMOutput <- function(SWMMoutfile, timezone="") {
   f.props$numLinkVars <- readBin(f, integer(), n = 1, size = 4)
   f.props$linkVarCodes <- readBin(f,integer(), n = f.props$numLinkVars,size=4)
   
-  f.props$numSysVars <- readBin(f,integer(), n=1,size=4)
-  f.props$sysVarCodes <- readBin(f,integer(), n=f.props$numSysVars,size=4)
+  f.props$numSysVars <- readBin(f,integer(), n = 1, size = 4)
+  f.props$sysVarCodes <- readBin(f,integer(), n = f.props$numSysVars,size=4)
 
   f.props$bytesPerPeriod <- 2*RECORDSIZE +
     RECORDSIZE * (f.props$numSubc * f.props$numSubcVars +
@@ -289,16 +289,18 @@ print.SWMMfile <- function(x, ...){
 ##' 
 ##' \code{vIndex} should be selected from this lists below, depending on whether \code{iType} is a subcatchment, a link, or a node.
 ##'                        
-##' Number of subcatchment variables (currently 6 + number of pollutants).
+##' Number of subcatchment variables (currently 8 + number of pollutants).
 ##' Code number of each subcatchment variable:
 ##' 0 for rainfall (in/hr or mm/hr),
 ##' 1 for snow depth (in or mm),
-##' 2 for evaporation + infiltration losses (in/hr or mm/hr),
-##' 3 for runoff rate (flow units),
-##' 4 for groundwater outflow rate (flow units),
-##' 5 for groundwater water table elevation (ft or m),
-##' 6 for runoff concentration of first pollutant,
-##' 5 + N for runoff concentration of N-th pollutant.
+##' 2 for evaporation losses (in/hr or mm/hr),
+##' 3 for infiltration losses (in/hr or mm/hr),
+##' 4 for runoff rate (flow units),
+##' 5 for groundwater outflow rate (flow units),
+##' 6 for groundwater water table elevation (ft or m),
+##' 7 for unsaturated zone moisture content,
+##' 8 for runoff concentration of first pollutant,
+##' 8 + N for runoff concentration of N-th pollutant.
 ##' 
 ##' Number of node variables (currently 6 + number of pollutants)
 ##' Code number of each node variable:
@@ -322,7 +324,7 @@ print.SWMMfile <- function(x, ...){
 ##' 5 for concentration of first pollutant,
 ##' 4 + N for concentration of N-th pollutant.
 ##' 
-##' Number of system-wide variables (currently 14)
+##' Number of system-wide variables (currently 15)
 ##' Code number of each system-wide variable:
 ##' 0 for air temperature (deg. F or deg. C),
 ##' 1 for rainfall (in/hr or mm/hr),
@@ -338,6 +340,7 @@ print.SWMMfile <- function(x, ...){
 ##' 11 for flow leaving through outfalls (flow units),
 ##' 12 for volume of stored water (ft3 or m3),
 ##' 13 for evaporation rate (in/day or mm/day)
+##' 14 Daily potential evapotranspiration (PET) (in/day or mm/day)
 ##' 
 ##' @title Read a single SWMM result
 ##' @param SWMMfile a \code{SWMMfile} object
@@ -382,11 +385,13 @@ readSingleResult <- function(SWMMfile, iType, iIndex, vIndex, period){
 ##' \itemize{
 ##' \item{"rainfall"}{}
 ##' \item{"snow depth"}{}
-##' \item{"evaporation + infiltration looks"}{}
+##' \item{"evaporation losses"}{}
+##' \item{"infiltration losses"}{}
 ##' \item{"runoff"}{}
-##' \item{"groundwater output"}{}
+##' \item{"groundwater outflow"}{}
 ##' \item{"groundwater water table elevation"}{}
-##' \item{"PollutantName"} {Only if pullutions are modeled.}
+##' \item{"unsaturated zone moisture content"}{fraction}
+##' \item{"PollutantName"} {Only if pollutions are modeled.}
 ##' }
 ##' @title read SWM results for subcatchments
 ##' @param SWMMfile a \code{SWMMfile} object
@@ -398,7 +403,7 @@ readSingleResult <- function(SWMMfile, iType, iIndex, vIndex, period){
 ##' @export
 readSubcatchments <- function(SWMMfile, names, variables=NULL) {
 
-   ## -- get index of elements
+  ## -- get index of elements
   iIndexes <- pmatch(names, SWMMfile$subcNames) - 1
   if(any(is.na(iIndexes))){
     stop(paste0("The following subcatchment names(s) could not be found in the file:\n-  ",
@@ -406,8 +411,9 @@ readSubcatchments <- function(SWMMfile, names, variables=NULL) {
   }
 
   ## -- get variable index
-  vars <- c("rainfall", "snow depth", "evaporation + infiltration losses", "runoff",
-            "groundwater outflow", "groundwater water table elevation",
+  vars <- c("rainfall", "snow depth", "evaporation losses",
+            "infiltration losses", "runoff", "groundwater outflow",
+            "groundwater water table elevation", "unsaturated zone moisture content",
             unlist(SWMMfile$pollNames))
   
   if(is.null(variables)) {
@@ -582,13 +588,15 @@ readLinks <- function(SWMMfile, names, variables=NULL){
 ##' \item{"evaporation + infiltration loss rate"}{}
 ##' \item{"runoff flow"}{}
 ##' \item{"dry weather inflow"}{}
+##' \item{"groundwater inflow"}{}
 ##' \item{"RDII inflow"}{}
 ##' \item{"direct inflow"}{user supplied}
 ##' \item{"total lateral inflow"}{sum of runoff flow plus all inflows}
 ##' \item{"flow lost to flooding"}{}
 ##' \item{"flow leaving through outfalls"}{}
 ##' \item{"volume of stored water"}{}
-##' \item{"evaporation rate"}{}
+##' \item{"actual evaporation rate"}{}
+##' \item{"potential evaporation rate"}
 ##' }
 ##' @title read SWM results for the system
 ##' @param SWMMfile a \code{SWMMfile} object
@@ -600,9 +608,10 @@ readSystem <- function(SWMMfile, variables=NULL){
 
   ## -- get variable index
   vars <- c("air temperature", "rainfall", "snow depth", "evaporation + infiltration loss rate",
-            "runoff flow", "dry weather inflow", "RDII inflow", "direct inflow",
-            "total lateral inflow", "flow lost to flooding", "flow leaving through outfalls",
-            "volume of stored water", "evaporation rate")
+            "runoff flow", "dry weather inflow", "groundwater inflow", "RDII inflow",
+            "direct inflow", "total lateral inflow", "flow lost to flooding",
+            "flow leaving through outfalls", "volume of stored water",
+            "actual evaporation rate", "potential evaporation rate")
   
   if(is.null(variables)){
     vIndexes = 0:(length(vars)-1)

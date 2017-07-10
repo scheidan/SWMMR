@@ -28,16 +28,18 @@ This function used internally only. Reads a single result from a SWMM outputfile
 
 \code{vIndex} should be selected from this lists below, depending on whether \code{iType} is a subcatchment, a link, or a node.
                        
-Number of subcatchment variables (currently 6 + number of pollutants).
+Number of subcatchment variables (currently 8 + number of pollutants).
 Code number of each subcatchment variable:
 0 for rainfall (in/hr or mm/hr),
 1 for snow depth (in or mm),
-2 for evaporation + infiltration losses (in/hr or mm/hr),
-3 for runoff rate (flow units),
-4 for groundwater outflow rate (flow units),
-5 for groundwater water table elevation (ft or m),
-6 for runoff concentration of first pollutant,
-5 + N for runoff concentration of N-th pollutant.
+2 for evaporation losses (in/hr or mm/hr),
+3 for infiltration losses (in/hr or mm/hr),
+4 for runoff rate (flow units),
+5 for groundwater outflow rate (flow units),
+6 for groundwater water table elevation (ft or m),
+7 for unsaturated zone moisture content,
+8 for runoff concentration of first pollutant,
+8 + N for runoff concentration of N-th pollutant.
 
 Number of node variables (currently 6 + number of pollutants)
 Code number of each node variable:
@@ -61,7 +63,7 @@ Code number of each link variable:
 5 for concentration of first pollutant,
 4 + N for concentration of N-th pollutant.
 
-Number of system-wide variables (currently 14)
+Number of system-wide variables (currently 15)
 Code number of each system-wide variable:
 0 for air temperature (deg. F or deg. C),
 1 for rainfall (in/hr or mm/hr),
@@ -77,6 +79,7 @@ Code number of each system-wide variable:
 11 for flow leaving through outfalls (flow units),
 12 for volume of stored water (ft3 or m3),
 13 for evaporation rate (in/day or mm/day)
+14 Daily potential evapotranspiration (PET) (in/day or mm/day)
 }
 \author{
 Andreas Scheidegger

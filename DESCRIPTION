@@ -1,11 +1,12 @@
 Package: SWMMR
 Type: Package
-Title:  R interface for EPA Storm Water Management Model (SWMM)
+Title: R interface for EPA Storm Water Management Model (SWMM)
 Version: 0.1.0
 Date: 2017-07-17
 Author: Andreas Scheidegger
-Maintainer:  <andreas.scheidegger@eawag.ch>
+Maintainer: <andreas.scheidegger@eawag.ch>
 Description: The package enables running a SWMM simulation, modifying the model inputs, and reading the binary files.
 License: GPL-2 
 RoxygenNote: 6.0.1
 Depends: xts (>= 0.1)
+Suggests: testthat

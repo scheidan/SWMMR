@@ -25,11 +25,13 @@ The following variables are available for subcatchments:
 \itemize{
 \item{"rainfall"}{}
 \item{"snow depth"}{}
-\item{"evaporation + infiltration looks"}{}
+\item{"evaporation losses"}{}
+\item{"infiltration losses"}{}
 \item{"runoff"}{}
-\item{"groundwater output"}{}
+\item{"groundwater outflow"}{}
 \item{"groundwater water table elevation"}{}
-\item{"PollutantName"} {Only if pullutions are modeled.}
+\item{"unsaturated zone moisture content"}{fraction}
+\item{"PollutantName"} {Only if pollutions are modeled.}
 }
 }
 \author{
