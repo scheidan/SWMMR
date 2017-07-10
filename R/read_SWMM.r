@@ -6,10 +6,12 @@
 ##'
 ##' @title Open a SWMM output file
 ##' @param SWMMoutfile character, path to output file
-##' @return a SWMM file handler
+##' @param timezone time zone specification of the dates. If \code{""}, the local time zone
+##' is used.
+##' @return a \code{SWMMfile} object
 ##' @author Andreas Scheidegger
 ##' @export
-openSWMMOutput <- function(SWMMoutfile) {
+openSWMMOutput <- function(SWMMoutfile, timezone="") {
   
   RECORDSIZE <- 4 
   f <- file(SWMMoutfile, "rb")
@@ -89,7 +91,7 @@ openSWMMOutput <- function(SWMMoutfile) {
       unitCode <- readBin(f, integer(), n = 1, size = 4)
       if(unitCode==0){
         f.props$pollUnits[i] <- "mg/L"
-      } else if(unitCode==1) {
+      } else if(unitCode==1){
         f.props$pollUnits[i] <- "ug/L"
       } else if(unitCode==2){
         f.props$pollUnits[i] <- "counts/L"
@@ -206,10 +208,12 @@ openSWMMOutput <- function(SWMMoutfile) {
   
   ## Convert times to POSIXlt datetimes
   f.props$SWMMTimes <- f.props$SWMMTimes*86400.0 +
-    as.POSIXct(strptime("12/30/1899", format="%m/%d/%Y", tz="GMT"))
+    as.POSIXct(strptime("12/30/1899", format="%m/%d/%Y", tz=timezone))
 
-  
-  f.props$outFileHandle <- f 
+  ## add file handler
+  f.props$outFileHandle <- f
+  f.props$fileName <- SWMMoutfile
+  class(f.props) <- normalizePath(SWMMoutfile)
   return(f.props)
 }
 
@@ -226,12 +230,12 @@ closeSWMMOutput <- function(SWMMfile){
 
 
 
-##' @title Extract properties of a SWMM output file
-##' @param SWMMfile a SWMM file handler
-##' @return list containing the most important properties
+##' @title Print main properties of a SWMM output file
+##' @param SWMMfile a \code{SWMMfile} object
+##' @return nothing
 ##' @author Andreas Scheidegger
 ##' @export
-properties <- function(SWMMfile){
+print.SWMMfile <- function(SWMMfile){
   ll <- list()
 
   ll$subcatchmentNames <- unlist(SWMMfile$subcNames)
@@ -248,20 +252,78 @@ properties <- function(SWMMfile){
   ll$minTime <- min(SWMMfile$SWMMTimes)
   ll$maxTime <- max(SWMMfile$SWMMTimes)
 
-  return(ll)
+  print(SWMMTimes$fileName)
+  print(ll)
 }
 
 
-## reading per variable is very slow as a lot of jumping is required... maybe read all data per time step instead?
 
+##' This function used internally only. Reads a single result from a SWMM outputfile.
+##'
+##' 
+##'\code{iType} should be 0 for Subcatchments, 1 for nodes, 2 for links, or 3 for system variables.
+##' 
+##' \code{vIndex} should be selected from this lists below, depending on whether \code{iType} is a subcatchment, a link, or a node.
+##'                        
+##' Number of subcatchment variables (currently 6 + number of pollutants).
+##' Code number of each subcatchment variable:
+##' 0 for rainfall (in/hr or mm/hr),
+##' 1 for snow depth (in or mm),
+##' 2 for evaporation + infiltration losses (in/hr or mm/hr),
+##' 3 for runoff rate (flow units),
+##' 4 for groundwater outflow rate (flow units),
+##' 5 for groundwater water table elevation (ft or m),
+##' 6 for runoff concentration of first pollutant,
+##' 5 + N for runoff concentration of N-th pollutant.
+##' 
+##' Number of node variables (currently 6 + number of pollutants)
+##' Code number of each node variable:
+##' 0 for depth of water above invert (ft or m),
+##' 1 for hydraulic head (ft or m),
+##' 2 for volume of stored + ponded water (ft3 or m3),
+##' 3 for lateral inflow (flow units),
+##' 4 for total inflow (lateral + upstream) (flow units),
+##' 5 for flow lost to flooding (flow units),
+##' 6 for concentration of first pollutant,
+##' 5 + N for concentration of N-th pollutant.
+##' 
+##' Number of link variables (currently 5 + number of pollutants)
+##' Code number of each link variable:
+##'                            
+##' 0 for flow rate (flow units),
+##' 1 for flow depth (ft or m),
+##' 2 for flow velocity (ft/s or m/s),
+##' 3 for Froude number,
+##' 4 for capacity (fraction of conduit filled),
+##' 5 for concentration of first pollutant,
+##' 4 + N for concentration of N-th pollutant.
+##' 
+##' Number of system-wide variables (currently 14)
+##' Code number of each system-wide variable:
+##' 0 for air temperature (deg. F or deg. C),
+##' 1 for rainfall (in/hr or mm/hr),
+##' 2 for snow depth (in or mm),
+##' 3 for evaporation + infiltration loss rate (in/hr or mm/hr),
+##' 4 for runoff flow (flow units),
+##' 5 for dry weather inflow (flow units),
+##' 6 for groundwater inflow (flow units),
+##' 7 for RDII inflow (flow units),
+##' 8 for user supplied direct inflow (flow units),
+##' 9 for total lateral inflow (sum of variables 4 to 8) (flow units),
+##' 10 for flow lost to flooding (flow units),
+##' 11 for flow leaving through outfalls (flow units),
+##' 12 for volume of stored water (ft3 or m3),
+##' 13 for evaporation rate (in/day or mm/day)
+##' 
+##' @title Read a single SWMM result
+##' @param SWMMfile a \code{SWMMfile} object
+##' @param iType \code{0}, \code{1}, \code{2}, or \code{3}. See Detail below.
+##' @param iIndex integer, the position of the subcatch, subcatch, node, link or sys object
+##' @param vIndex integer, index of the variable. See Detail below.
+##' @param period integer, index of the period (time step)
+##' @return a scalar
+##' @author Andreas Scheidegger
 readSingleResult <- function(SWMMfile, iType, iIndex, vIndex, period){
-  ## Reads a *single* SWMM result. 
-  ## See the documentation in SWMM intefacing for detail
-  ## iType is either 0,1,2,3 for subcatch, node, link or sys variable
-  ## vIndex is the index of the variable for subcatch, node, link or sys object
-  ## iIndex is the position of the subcatch, node, or link among the other subcatch, links, nodes
-  ## I would recommend using getSWMMTimeSeries so that you don't have to know iIndex.  That function is a wrapper
-  ## around this one and looks up results based on names not indicies.
 
   RECORDSIZE <- 4
   f <- SWMMfile$outFileHandle
@@ -290,127 +352,256 @@ readSingleResult <- function(SWMMfile, iType, iIndex, vIndex, period){
 }
 
 
+##' Read subcatchment results from a SWMM file.
+##'
+##' The following variables are available for subcatchments:
+##' \itemize{
+##' \item{"rainfall"}{}
+##' \item{"snow depth"}{}
+##' \item{"evaporation + infiltration looks"}{}
+##' \item{"runoff"}{}
+##' \item{"groundwater output"}{}
+##' \item{"groundwater water table elevation"}{}
+##' \item{"PollutantName"} {Only if pullutions are modeled.}
+##' }
+##' @title read SWM results for subcatchments
+##' @param SWMMfile a \code{SWMMfile} object
+##' @param names vector of names of the subcatchment to be read. Partial matching is supported.
+##' @param variables vector of variables to be read for each subcatchment, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.
+##' @return A named list of separate \code{xts} objects for each variable.
+##' The \code{xts} objects contain the data for all subcatchment.
+##' @author Andreas Scheidegger
+##' @export
+readSubcatchments <- function(SWMMfile, names, variables=NULL) {
 
-readSubcatchments <- function(SWMMfile, names, variables="all") {
-  ## Number of subcatchment variables (currently 6 + number of pollutants).
-  ## Code number of each subcatchment variable:
-  ## 0 for rainfall (in/hr or mm/hr),
-  ## 1 for snow depth (in or mm),
-  ## 2 for evaporation + infiltration losses (in/hr or mm/hr),
-  ## 3 for runoff rate (flow units),
-  ## 4 for groundwater outflow rate (flow units),
-  ## 5 for groundwater water table elevation (ft or m),
-  ## 6 for runoff concentration of first pollutant,
-  ## 5 + N for runoff concentration of N-th pollutant.
+   ## -- get index of elements
+  iIndexes <- pmatch(names, SWMMfile$subcNames) - 1
+  if(any(is.na(iIndexes))){
+    stop(paste0("The following subcatchment names(s) could not be found in the file:\n-  ",
+                paste(names[is.na(iIndexes)], collapse="\n-  ")))
+  }
 
-  iType <- 0
-
-  ## get index of elements
-  iIndexes <- which(SWMMfile$subcNames %in% name) - 1
-
-  ## get variable index
+  ## -- get variable index
   vars <- c("rainfall", "snow depth", "evaporation + infiltration losses", "runoff",
-            "groundwater outflow", "groundwater water table elevation", unlist(SWMMfile$pollNames))
-  if(variables=="all") {
+            "groundwater outflow", "groundwater water table elevation",
+            unlist(SWMMfile$pollNames))
+  
+  if(is.null(variables)) {
     vIndexes = 0:(length(vars)-1)
   } else {
     vIndexes <- pmatch(variables, vars) - 1
   }
 
-  for(i in iIndexes){
-    for(v in vIndexes){
-      output <- array(NA, SWMMfile$numReportingPeriods)
-      for(period in 1:SWMMfile$numReportingPeriods){
-        output[period] <- readSingleResult(SWMMfile, iType=iType, iIndex=i,
-                                           vIndex=c, period=period-1) 
-      }
-    }
+  if(any(is.na(vIndexes))){
+    stop(paste0("The following variable(s) could not be uniquely matched:\n-  ",
+                paste(variables[is.na(vIndexes)], collapse="\n-  ")))
   }
 
-  output
+    
+  ## read 
+  results <- list()
+  for(v in vIndexes){
+    temp <- matrix(NA, ncol=length(iIndexes), nrow=SWMMfile$numReportingPeriods)
+    colnames(temp) <- names 
+    for(i in seq_along(iIndexes)){
+      for(period in 1:SWMMfile$numReportingPeriods){
+        temp[period,i] <- readSingleResult(SWMMfile, iType=0, iIndex=iIndexes[i],
+                                           vIndex=v, period=period-1) 
+      }
+    }
+    results[[vars[v+1]]] <- xts(temp, SWMMfile$SWMMTimes)
+  }
 
+  results
 }
 
 
 
-getSWMMTimeSeriesData <- function(SWMMfile, name, iType, vIndex){
-  ## SWMMfile should be an object obtained by calling openSWMMOut
-  ## iType should be 0 for Subcatchments
-  ##                1 for nodes
-  ##                2 for links
-  ##                3 for system variables
-  ## name should be the exact name in the output file of a subcatchment,
-  ## link, or node, or leave this as an empty string if searching for system results
-  ## vIndex should be selected from this lists below,depending on whether iType is a subcatchment,
-  ## link or node.
-  ## #
-  ## # BEGIN vIndex choices###############################
-  ## #
-  ## Number of subcatchment variables (currently 6 + number of pollutants).
-  ## Code number of each subcatchment variable:
-  ## 0 for rainfall (in/hr or mm/hr),
-  ## 1 for snow depth (in or mm),
-  ## 2 for evaporation + infiltration losses (in/hr or mm/hr),
-  ## 3 for runoff rate (flow units),
-  ## 4 for groundwater outflow rate (flow units),
-  ## 5 for groundwater water table elevation (ft or m),
-  ## 6 for runoff concentration of first pollutant,
-  ## 5 + N for runoff concentration of N-th pollutant.
-  ##
-  ## Number of node variables (currently 6 + number of pollutants)
-  ## Code number of each node variable:
-  ## 0 for depth of water above invert (ft or m),
-  ## 1 for hydraulic head (ft or m),
-  ## 2 for volume of stored + ponded water (ft3 or m3),
-  ## 3 for lateral inflow (flow units),
-  ## 4 for total inflow (lateral + upstream) (flow units),
-  ## 5 for flow lost to flooding (flow units),
-  ## 6 for concentration of first pollutant,
-  ## 5 + N for concentration of N-th pollutant.
-  ##
-  ## Number of link variables (currently 5 + number of pollutants)
-  ## Code number of each link variable:
-  ##
-  ## 0 for flow rate (flow units),
-  ## 1 for flow depth (ft or m),
-  ## 2 for flow velocity (ft/s or m/s),
-  ## 3 for Froude number,
-  ## 4 for capacity (fraction of conduit filled),
-  ## 5 for concentration of first pollutant,
-  ## 4 + N for concentration of N-th pollutant.
-  ##
-  ## Number of system-wide variables (currently 14)
-  ## Code number of each system-wide variable:
-  ## 0 for air temperature (deg. F or deg. C),
-  ## 1 for rainfall (in/hr or mm/hr),
-  ## 2 for snow depth (in or mm),
-  ## 3 for evaporation + infiltration loss rate (in/hr or mm/hr),
-  ## 4 for runoff flow (flow units),
-  ## 5 for dry weather inflow (flow units),
-  ## 6 for groundwater inflow (flow units),
-  ## 7 for RDII inflow (flow units),
-  ## 8 for user supplied direct inflow (flow units),
-  ## 9 for total lateral inflow (sum of variables 4 to 8) (flow units),
-  ## 10 for flow lost to flooding (flow units),
-  ## 11 for flow leaving through outfalls (flow units),
-  ## 12 for volume of stored water (ft3 or m3),
-  ## 13 for evaporation rate (in/day or mm/day)
-  ##
 
-  if(iType==0){
-    iIndex <- (0:(SWMMfile$numSubc-1))[SWMMfile$subcNames==name]
-  } else if(iType==1){
-    iIndex <- (0:(SWMMfile$numNode-1))[SWMMfile$nodeNames==name]
-  } else if(iType==2){
-    iIndex <- (0:(SWMMfile$numLink-1))[SWMMfile$linkNames==name]
-  } else if(iType==3){
-    iIndex <- 0
+##' Read node results from a SWMM file.
+##'
+##' The following variables are available for nodes:
+##' \itemize{
+##' \item{"depth of water above invert"}{}
+##' \item{"hydraulic head"}{}
+##' \item{"volume of stored + ponded water"}{}
+##' \item{"lateral inflow"}{}
+##' \item{"total inflow"}{lateral + upstream}
+##' \item{"flow lost to flooding"}{}
+##' \item{"PollutantName concentration"} {Only if pollutions are modeled.}
+##' }
+##' @title read SWM results for nodes
+##' @param SWMMfile a \code{SWMMfile} object
+##' @param names vector of names of the nodes to be read. Partial matching is supported.
+##' @param variables vector of variables to be read for each node, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.
+##' @return A named list of separate \code{xts} objects for each variable.
+##' The \code{xts} objects contain the data for all nodes.
+##' @author Andreas Scheidegger
+##' @export
+readNodes <- function(SWMMfile, names, variables=NULL){
+
+  ## -- get index of elements
+  iIndexes <- pmatch(names, SWMMfile$nodeNames) - 1
+  if(any(is.na(iIndexes))){
+    stop(paste0("The following node names(s) could not be found in the file:\n-  ",
+                paste(names[is.na(iIndexes)], collapse="\n-  ")))
   }
-  output <- array(NA, SWMMfile$numReportingPeriods)
-  for(period in 0:(-1+SWMMfile$numReportingPeriods)){
-    output[period+1] <- readSingleResult(SWMMfile=SWMMfile, iType=iType, iIndex=iIndex,
-                                         vIndex=vIndex, period=period)
+
+  ## -- get variable index
+  vars <- c("depth of water above invert", "hydraulic head", "volume of stored + ponded water",
+            "lateral inflow", "total inflow", "flow lost to flooding")
+  if(length(SWMMfile$pollNames)>0){
+    vars <- c(vars, paste(unlist(SWMMfile$pollNames), "concentration"))
   }
-  return(output)
+  
+  if(is.null(variables)){
+    vIndexes = 0:(length(vars)-1)
+  } else {
+    vIndexes <- pmatch(variables, vars) - 1
+  }
+
+  if(any(is.na(vIndexes))){
+    stop(paste0("The following variable(s) could not be uniquely matched:\n-  ",
+                paste(variables[is.na(vIndexes)], collapse="\n-  ")))
+  }
+  
+  ## read 
+  results <- list()
+  for(v in vIndexes){
+    temp <- matrix(NA, ncol=length(iIndexes), nrow=SWMMfile$numReportingPeriods)
+    colnames(temp) <- names 
+    for(i in seq_along(iIndexes)){
+      for(period in 1:SWMMfile$numReportingPeriods){
+        temp[period,i] <- readSingleResult(SWMMfile, iType=1, iIndex=iIndexes[i],
+                                           vIndex=v, period=period-1) 
+      }
+    }
+    results[[vars[v+1]]] <- xts(temp, SWMMfile$SWMMTimes)
+  }
+
+  results
+
+}
+
+
+##' Read link results from a SWMM file.
+##'
+##' The following variables are available for links:
+##' \itemize{
+##' \item{"flow rate"}{}
+##' \item{"flow depth"}{}
+##' \item{"flow velocity"}{}
+##' \item{"Froude number"}{}
+##' \item{"capacity"}{fraction of conduit filled}
+##' \item{"PollutantName concentration"} {Only if pollutions are modeled.}
+##' }
+##' @title read SWM results for links
+##' @param SWMMfile a \code{SWMMfile} object
+##' @param names vector of names of the links to be read. Partial matching is supported.
+##' @param variables vector of variables to be read for each link, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.
+##' @return A named list of separate \code{xts} objects for each variable.
+##' The \code{xts} objects contain the data for all links.
+##' @author Andreas Scheidegger
+##' @export
+readLinks <- function(SWMMfile, names, variables=NULL){
+
+  ## -- get index of elements
+  iIndexes <- pmatch(names, SWMMfile$linkNames) - 1
+  if(any(is.na(iIndexes))){
+    stop(paste0("The following link names(s) could not be found in the file:\n-  ",
+                paste(names[is.na(iIndexes)], collapse="\n-  ")))
+  }
+
+  ## -- get variable index
+  vars <- c("flow rate", "flow depth", "flow velocity", "Froude number", "capacity")
+  if(length(SWMMfile$pollNames)>0){
+    vars <- c(vars, paste(unlist(SWMMfile$pollNames), "concentration"))
+  }
+  
+  if(is.null(variables)){
+    vIndexes = 0:(length(vars)-1)
+  } else {
+    vIndexes <- pmatch(variables, vars) - 1
+  }
+
+  if(any(is.na(vIndexes))){
+    stop(paste0("The following variable(s) could not be uniquely matched:\n-  ",
+                paste(variables[is.na(vIndexes)], collapse="\n-  ")))
+  }
+  
+  ## read 
+  results <- list()
+  for(v in vIndexes){
+    temp <- matrix(NA, ncol=length(iIndexes), nrow=SWMMfile$numReportingPeriods)
+    colnames(temp) <- names 
+    for(i in seq_along(iIndexes)){
+      for(period in 1:SWMMfile$numReportingPeriods){
+        temp[period,i] <- readSingleResult(SWMMfile, iType=2, iIndex=iIndexes[i],
+                                           vIndex=v, period=period-1) 
+      }
+    }
+    results[[vars[v+1]]] <- xts(temp, SWMMfile$SWMMTimes)
+  }
+
+  results 
+}
+
+
+
+##' Reads the system results from a SWMM file.
+##'
+##' The following variables are available for the system:
+##' \itemize{
+##' \item{"air temperature"}{}
+##' \item{"rainfall"}{}
+##' \item{"snow depth"}{}
+##' \item{"evaporation + infiltration loss rate"}{}
+##' \item{"runoff flow"}{}
+##' \item{"dry weather inflow"}{}
+##' \item{"RDII inflow"}{}
+##' \item{"direct inflow"}{user supplied}
+##' \item{"total lateral inflow"}{sum of runoff flow plus all inflows}
+##' \item{"flow lost to flooding"}{}
+##' \item{"flow leaving through outfalls"}{}
+##' \item{"volume of stored water"}{}
+##' \item{"evaporation rate"}{}
+##' }
+##' @title read SWM results for the system
+##' @param SWMMfile a \code{SWMMfile} object
+##' @param variables vector of variables to be read, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.
+##' @return A named list of \code{xts} objects for each variable.
+##' @author Andreas Scheidegger
+##' @export
+readSystem <- function(SWMMfile, variables=NULL){
+
+  ## -- get variable index
+  vars <- c("air temperature", "rainfall", "snow depth", "evaporation + infiltration loss rate",
+            "runoff flow", "dry weather inflow", "RDII inflow", "direct inflow",
+            "total lateral inflow", "flow lost to flooding", "flow leaving through outfalls",
+            "volume of stored water", "evaporation rate")
+  
+  if(is.null(variables)){
+    vIndexes = 0:(length(vars)-1)
+  } else {
+    vIndexes <- pmatch(variables, vars) - 1
+  }
+
+  if(any(is.na(vIndexes))){
+    stop(paste0("The following variable(s) could not be uniquely matched:\n-  ",
+                paste(variables[is.na(vIndexes)], collapse="\n-  ")))
+  }
+  
+  ## -- read
+  results <- list()
+  for(v in vIndexes){
+    temp <- rep(NA, SWMMfile$numReportingPeriods) 
+    for(period in 1:SWMMfile$numReportingPeriods){
+      temp[period] <- readSingleResult(SWMMfile, iType=3, iIndex=0,
+                                       vIndex=v, period=period-1) 
+    }
+    results[[vars[v+1]]] <- xts(temp, SWMMfile$SWMMTimes)
+  }
+
+  results 
 }
 

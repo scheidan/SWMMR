@@ -8,3 +8,4 @@ Maintainer:  <andreas.scheidegger@eawag.ch>
 Description: The package enables running a SWMM simulation, modifying the model inputs, and reading the binary files.
 License: GPL-2 
 RoxygenNote: 6.0.1
+Depends: xts (>= 0.1)
