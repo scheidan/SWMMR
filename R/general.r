@@ -13,6 +13,9 @@ NULL
 ##' and reading the binary files.
 ##'
 ##' The code is based on the work of Peter Steinberg \url{https://github.com/PeterDSteinberg/RSWMM}.
+##'
+##' An alternative is the \code{swmmr} package by dleutnant \url{https://github.com/dleutnant/swmmr}. Output files
+##' read in C++ which should be faster.
 ##' @name SWMMR
 ##' @author Andreas Scheidegger
 ##' @docType package

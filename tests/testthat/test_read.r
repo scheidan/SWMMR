@@ -45,13 +45,14 @@ test_that("Check if subcatchments information is correct", {
 
 
 test_that("Check if node information is correct", {
-  expect_equal(length(readNodes(ff, names=c("O1"))), ff$numNodeVar)
+  expect_equal(length(readNodes(ff, names=c("O1"))), ff$numNodeVar) 
 })
 
 
-## test_that("link information is correct", {
-##   expect_equal(length(readLinks(ff, names=c("L1"))), ff$numLinkPropSaved)
-## })
+test_that("Check if link information is correct", {
+  ## test file conatins no link
+  ## expect_equal(length(readLinks(ff, names=c("L1"))), ff$numLinkPropSaved)
+})
 
 
 test_that("Check if system information is correct", {

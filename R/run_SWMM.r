@@ -22,7 +22,7 @@
 runSWMM <- function(parameters=NULL, inputfile,
                     reportfilename="report.rpt",
                     outputfilename="output.out",
-                    SWMMexe='swmm5.exe', quite=FALSE){
+                    SWMMexe="swmm5.exe", quite=FALSE){
 
   ## Change parameters in input file
   if(!is.null(parameters)){
