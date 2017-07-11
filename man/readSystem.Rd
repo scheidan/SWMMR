@@ -9,7 +9,8 @@ readSystem(SWMMfile, variables = NULL)
 \arguments{
 \item{SWMMfile}{a \code{SWMMfile} object}
 
-\item{variables}{vector of variables to be read, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.}
+\item{variables}{vector of variables to be read, see Details below. If \code{NULL}, all variables are read.
+Partial matching is supported.}
 }
 \value{
 A named list of \code{xts} objects for each variable.

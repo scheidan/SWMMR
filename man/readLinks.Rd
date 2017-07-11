@@ -4,14 +4,15 @@
 \alias{readLinks}
 \title{read SWM results for links}
 \usage{
-readLinks(SWMMfile, names, variables = NULL)
+readLinks(SWMMfile, names = NULL, variables = NULL)
 }
 \arguments{
 \item{SWMMfile}{a \code{SWMMfile} object}
 
-\item{names}{vector of names of the links to be read. Partial matching is supported.}
+\item{names}{vector of names of the links to be read. If \code{NULL}, all links are read. Partial matching is supported.}
 
-\item{variables}{vector of variables to be read for each link, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.}
+\item{variables}{vector of variables to be read for each link, see Details below.
+If \code{NULL}, all variables are read. Partial matching is supported.}
 }
 \value{
 A named list of separate \code{xts} objects for each variable.

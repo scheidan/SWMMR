@@ -256,31 +256,31 @@ print.SWMMfile <- function(x, ...){
   
   cat(length(x$subcNames), "subcatchments")
   if(length(x$subcNames)>0){
-    cat(":\n-  ")
-    cat(paste(unlist(x$subcNames), collapse="\n-  "))
+    cat(":\n  ")
+    cat(paste(unlist(x$subcNames), collapse=", "), sep="")
   }
 
   cat("\n\n")
   cat(length(x$nodeNames), "nodes")
   if(length(x$nodeNames)>0) {
-    cat(":\n-  ")
+    cat(":\n  ")
     cat(paste(paste0(unlist(x$nodeNames),
-                     " (",unlist(x$nodeType), ")"), collapse="\n-  "))
+                     " (",unlist(x$nodeType), ")"), collapse=", "), sep="")
   }
 
   cat("\n\n")
   cat(length(x$linkNames), "links")
   if(length(x$linkNames)>0) {
-    cat(":\n-  ")
-    cat(paste(unlist(x$linkNames), collapse="\n-  "))
+    cat(":\n  ")
+    cat(paste(unlist(x$linkNames), collapse=", "), sep="")
   }
 
   cat("\n\n")
   cat(x$numPoll, "pollutants")
   if(x$numPoll>0){
-    cat(":\n-  ")
+    cat(":\n  ")
     cat(paste(paste0(unlist(x$pollNames),
-                     " [",unlist(x$pollUnits), "]"), collapse="\n-  "))
+                     " [",unlist(x$pollUnits), "]"), collapse=", "), sep="")
   }
 
   cat("\n\n")
@@ -402,20 +402,25 @@ readSingleResult <- function(SWMMfile, iType, iIndex, vIndex, period){
 ##' }
 ##' @title read SWM results for subcatchments
 ##' @param SWMMfile a \code{SWMMfile} object
-##' @param names vector of names of the subcatchment to be read. Partial matching is supported.
-##' @param variables vector of variables to be read for each subcatchment, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.
+##' @param names vector of names of the subcatchment to be read. If \code{NULL}, all subcatchment are read.
+##' Partial matching is supported.
+##' @param variables vector of variables to be read for each subcatchment, see Details below. If \code{NULL},
+##' all variables are read. Partial matching is supported.
 ##' @return A named list of separate \code{xts} objects for each variable.
 ##' The \code{xts} objects contain the data for all subcatchment.
 ##' @author Andreas Scheidegger
 ##' @export
-readSubcatchments <- function(SWMMfile, names, variables=NULL) {
+readSubcatchments <- function(SWMMfile, names=NULL, variables=NULL) {
 
   ## -- get index of elements
+  if(is.null(names)) names <- unlist(SWMMfile$subcNames)
+  
   iIndexes <- pmatch(names, SWMMfile$subcNames) - 1
   if(any(is.na(iIndexes))){
     stop(paste0("The following subcatchment names(s) could not be found in the file:\n-  ",
                 paste(names[is.na(iIndexes)], collapse="\n-  ")))
   }
+
 
   ## -- get variable index
   vars <- c("rainfall", "snow depth", "evaporation losses",
@@ -469,15 +474,17 @@ readSubcatchments <- function(SWMMfile, names, variables=NULL) {
 ##' }
 ##' @title read SWM results for nodes
 ##' @param SWMMfile a \code{SWMMfile} object
-##' @param names vector of names of the nodes to be read. Partial matching is supported.
+##' @param names vector of names of the nodes to be read. If \code{NULL}, all nodes are read. Partial matching is supported.
 ##' @param variables vector of variables to be read for each node, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.
 ##' @return A named list of separate \code{xts} objects for each variable.
 ##' The \code{xts} objects contain the data for all nodes.
 ##' @author Andreas Scheidegger
 ##' @export
-readNodes <- function(SWMMfile, names, variables=NULL){
+readNodes <- function(SWMMfile, names=NULL, variables=NULL){
 
   ## -- get index of elements
+  if(is.null(names)) names <- unlist(SWMMfile$nodeNames)
+  
   iIndexes <- pmatch(names, SWMMfile$nodeNames) - 1
   if(any(is.na(iIndexes))){
     stop(paste0("The following node names(s) could not be found in the file:\n-  ",
@@ -534,15 +541,18 @@ readNodes <- function(SWMMfile, names, variables=NULL){
 ##' }
 ##' @title read SWM results for links
 ##' @param SWMMfile a \code{SWMMfile} object
-##' @param names vector of names of the links to be read. Partial matching is supported.
-##' @param variables vector of variables to be read for each link, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.
+##' @param names vector of names of the links to be read. If \code{NULL}, all links are read. Partial matching is supported.
+##' @param variables vector of variables to be read for each link, see Details below.
+##' If \code{NULL}, all variables are read. Partial matching is supported.
 ##' @return A named list of separate \code{xts} objects for each variable.
 ##' The \code{xts} objects contain the data for all links.
 ##' @author Andreas Scheidegger
 ##' @export
-readLinks <- function(SWMMfile, names, variables=NULL){
+readLinks <- function(SWMMfile, names=NULL, variables=NULL){
 
   ## -- get index of elements
+  if(is.null(names)) names <- unlist(SWMMfile$linkNames)
+  
   iIndexes <- pmatch(names, SWMMfile$linkNames) - 1
   if(any(is.na(iIndexes))){
     stop(paste0("The following link names(s) could not be found in the file:\n-  ",
@@ -607,7 +617,8 @@ readLinks <- function(SWMMfile, names, variables=NULL){
 ##' }
 ##' @title read SWM results for the system
 ##' @param SWMMfile a \code{SWMMfile} object
-##' @param variables vector of variables to be read, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.
+##' @param variables vector of variables to be read, see Details below. If \code{NULL}, all variables are read.
+##' Partial matching is supported.
 ##' @return A named list of \code{xts} objects for each variable.
 ##' @author Andreas Scheidegger
 ##' @export

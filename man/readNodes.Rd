@@ -4,12 +4,12 @@
 \alias{readNodes}
 \title{read SWM results for nodes}
 \usage{
-readNodes(SWMMfile, names, variables = NULL)
+readNodes(SWMMfile, names = NULL, variables = NULL)
 }
 \arguments{
 \item{SWMMfile}{a \code{SWMMfile} object}
 
-\item{names}{vector of names of the nodes to be read. Partial matching is supported.}
+\item{names}{vector of names of the nodes to be read. If \code{NULL}, all nodes are read. Partial matching is supported.}
 
 \item{variables}{vector of variables to be read for each node, see Details below. If \code{NULL}, all variables are read. Partial matching is supported.}
 }
