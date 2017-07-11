@@ -13,7 +13,7 @@ binary output files.
 install.packages("devtools")
 ```
 
-3. Install SWMMR (type in the R command line)
+2. Install SWMMR (type in the R command line)
 ```
 library(devtools)
 install_github("scheidan/SWMMR")
@@ -33,17 +33,19 @@ runSWMM <- function(inputfile = "input.inp",
                     SWMMexe="swmm5.exe")
 
 ## Read output file
-result <- openSWMMOutput("output.out")
+resfile <- openSWMMOutput("output.out")
 
-result    # print summary
+resfile                                        # print summary
 
-readSubcatchments(ff, names=c("S1", "S2", "S3"), variables=c("rainfall", "runoff"))
+readSubcatchments(resfile, names=c("S1", "S2", "S3"), variables=c("rainfall", "runoff"))
 
-readNodes(ff, names="Nod1")               # read all varbles for node "Nod1"
+readNodes(resfile, names="Nod1")               # read all varbles for node "Nod1"
 
-readLinks(ff, names=NULL, variables=NULL) # read all variables for all links
+readLinks(resfile, names=NULL, variables=NULL) # read all variables for all links
 
-readSystem(ff)                            # read all system variables
+readSystem(resfile)                            # read all system variables
+
+closeSWMMOutput(resfile)                       # close file
 ```
 
 ## Alternatives
