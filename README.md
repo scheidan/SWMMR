@@ -47,7 +47,7 @@ readSystem(ff)                            # read all system variables
 ```
 
 ## Alternatives
-An alternative is the [_swmmr_](\url{https://github.com/dleutnant/swmmr}) package by dleutnant .
+An alternative is the [_swmmr_](https://github.com/dleutnant/swmmr) package by dleutnant .
 It should be faster (due file reader written in C++), the interface is more low-level compared to _SWMMR_.
 
 ## Acknowledgments
