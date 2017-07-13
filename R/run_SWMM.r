@@ -32,18 +32,22 @@ runSWMM <- function(parameters=NULL, inputfile,
   }
   
   ## Run SWMM 
-  inputfile <- paste0('"', inputfile,'"')
-  reportfile <- paste0('"', reportfile,'"')
-  outputfile <- paste0('"', outputfile,'"')
-  SWMMexe <- paste0('"', SWMMexe,'"')
+  inputfile <- paste0('"', normalizePath(inputfile, mustWork=TRUE),'"')
+  reportfile <- paste0('"', normalizePath(reportfilename, mustWork=FALSE),'"')
+  outputfile <- paste0('"', normalizePath(outputfilename, mustWork=FALSE),'"')
+  SWMMexe <- paste0('"', normalizePath(SWMMexe, mustWork=TRUE),'"')
 
   command <- paste(SWMMexe, inputfile, reportfile, outputfile, sep=" ")
 
   if(!quite){
-    print(paste("Executing: ",command,sep="",collapse=""))
-    system(command, show.output.on.console=TRUE)
+    cat("\nExecuting:\n ", command)
+    if(.Platform$OS.type == "unix"){
+      system(command)
+    } else {
+      system(command, show.output.on.console=TRUE)
+    }
   } else {
-    system(command, show.output.on.console=FALSE)
+    system(command)
   }
   flush.console()
 
@@ -70,7 +74,7 @@ buildInputFile <- function(inputfile, templatefile, parameters){
   missing.matches <- regmatches(SWMMTemplate, gregexpr("\\{[^\\\\{]*\\}", SWMMTemplate))
   n.missing <- sum(sapply(missing.matches, function(x) length(x)>0))
   if(n.missing>0) {
-    error.str <- cat("The following templates are found in file \n  '",
+    error.str <- cat("\nThe following templates are found in file \n  '",
                      templatefile, "'\n but not in 'parameters':\n", sep="")
     for(m in seq_along(missing.matches)){
       if(length(missing.matches[[m]])>0)
@@ -82,8 +86,8 @@ buildInputFile <- function(inputfile, templatefile, parameters){
 
   ## check of parameters that are not found in template
   if(any(n.matches==0)){
-    warning(paste("The follwing parameter(s) could not be found in the template file:\n-  "),
-            paste(names(parameters)[n.matches==0], collapse="\n-  "))
+    stop(paste("\nThe follwing parameter(s) could not be found in the template file:\n-  "),
+         paste(names(parameters)[n.matches==0], collapse="\n-  "))
   }
 
   ## write input file
