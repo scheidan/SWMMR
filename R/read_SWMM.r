@@ -28,8 +28,10 @@ openSWMMOutput <- function(SWMMoutfile, timezone="") {
   }
 
   f.props$SWMMversion <- header[2]
-  if(f.props$SWMMversion != 51000){
-    stop("SWMM V5.1 is required!")
+  if(f.props$SWMMversion < 51000){
+    stop(paste0("file was produced by SWMM version ",
+                f.props$SWMMversion,
+                ", but SWMM at least V5.1 is required!"))
   }
   
   f.props$numSubc <- header[4]
