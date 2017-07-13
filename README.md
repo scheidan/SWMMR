@@ -32,6 +32,16 @@ runSWMM(inputfile = "input.inp",
         outputfilename="output.out",
         SWMMexe="swmm5.exe")
 
+## Run SWMM with given parameters
+## The input file is now used as template:
+## All strings "{area}" and "{width}" in the input file are
+## replaced by the values given by 'parameter'.
+runSWMM(parameter = c("area=10", width=4),
+        inputfile = "input_template.inp",
+        reportfilename="report.rpt",
+        outputfilename="output.out",
+        SWMMexe="swmm5.exe")
+
 ## Read output file
 resfile <- openSWMMOutput("output.out")
 
