@@ -27,10 +27,10 @@ This is a minimal example, see the package help for more options.
 library(SWMMR)
 
 ## Run SWMM
-runSWMM <- function(inputfile = "input.inp",
-                    reportfilename="report.rpt",
-                    outputfilename="output.out",
-                    SWMMexe="swmm5.exe")
+runSWMM(inputfile = "input.inp",
+        reportfilename="report.rpt",
+        outputfilename="output.out",
+        SWMMexe="swmm5.exe")
 
 ## Read output file
 resfile <- openSWMMOutput("output.out")

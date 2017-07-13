@@ -11,6 +11,9 @@ and reading the binary files.
 }
 \details{
 The code is based on the work of Peter Steinberg \url{https://github.com/PeterDSteinberg/RSWMM}.
+
+An alternative is the \code{swmmr} package by Dominik Leutnant \url{https://github.com/dleutnant/swmmr}. Output files
+read in C++ which should be faster.
 }
 \author{
 Andreas Scheidegger
