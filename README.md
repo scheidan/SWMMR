@@ -36,7 +36,7 @@ runSWMM(inputfile = "input.inp",
 ## The input file is now used as template:
 ## All strings "{area}" and "{width}" in the input file are
 ## replaced by the values given by 'parameter'.
-runSWMM(parameter = c("area=10", width=4),
+runSWMM(parameter = c(area=10, width=4),
         inputfile = "input_template.inp",
         reportfilename="report.rpt",
         outputfilename="output.out",
